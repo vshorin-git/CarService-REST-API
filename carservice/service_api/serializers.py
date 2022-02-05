@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
+from datetime import datetime, timezone
 
 from .models import *
 
@@ -42,8 +43,10 @@ class AppointmentDetailSerializer(serializers.ModelSerializer):
         """
         client = ClientProfile.objects.get(user=self.context['request'].user)
         data.update({'client': client})
-        print(data)
-
+        utc_dt = datetime.now(timezone.utc)  # UTC time
+        dt = utc_dt.astimezone()  # local time
         if Appointment.objects.filter(date=data['date']):
             raise serializers.ValidationError("Выбранная дата уже занята, пожалуйста, выберите другую дату")
+        elif data['date'] <= dt:
+            raise serializers.ValidationError("Указана дата в прошлом, пожалуйста, выберите другую")
         return data
